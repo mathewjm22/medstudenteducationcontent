@@ -3,196 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rich Text Section Splitter</title>
+    <title>Med-Student Section Splitter</title>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --bg: #f8fafc;
-            --border: #e2e8f0;
+        :root { --primary: #0078d4; --bg: #f3f2f1; --card: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; line-height: 1.5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        /* Input Area */
+        #inputBox { 
+            background: white; border: 2px solid #deecf9; border-radius: 4px;
+            padding: 20px; min-height: 250px; margin-bottom: 20px;
+            overflow-y: auto; outline: none;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: #1e293b;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 900px;
-        }
-        h1 { color: var(--primary); margin-bottom: 10px; }
-        p.instructions { margin-bottom: 20px; color: #64748b; }
+        #inputBox:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0,120,212,0.2); }
+        #inputBox:empty:before { content: "Paste your entire document here (images, bullets, and all)..."; color: #a19f9d; }
 
-        /* Rich Text Areas */
-        .editor-box {
-            background: white;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
-            min-height: 200px;
-            max-height: 400px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            outline: none;
-            transition: border-color 0.2s;
+        .btn-main { 
+            background: var(--primary); color: white; border: none; padding: 15px 30px; 
+            font-size: 18px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;
+            margin-bottom: 30px; transition: background 0.2s;
         }
-        .editor-box:focus { border-color: var(--primary); }
+        .btn-main:hover { background: #106ebe; }
 
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            margin-bottom: 40px;
+        /* Output Cards */
+        .section-card { 
+            background: var(--card); border-radius: 8px; margin-bottom: 25px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 5px solid var(--primary);
         }
-        .btn:hover { background: #4338ca; }
-
-        /* Results Styling */
-        .section-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-        .section-header {
-            background: #f1f5f9;
-            padding: 10px 15px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            border-top-left-radius: 8px;
+        .section-header { 
+            padding: 12px 20px; background: #faf9f8; border-bottom: 1px solid #edebe9;
+            display: flex; justify-content: space-between; align-items: center;
             border-top-right-radius: 8px;
         }
-        .copy-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
+        .section-title { font-weight: bold; color: #323130; }
+        .copy-btn { 
+            background: #107c10; color: white; border: none; padding: 8px 15px; 
+            border-radius: 4px; cursor: pointer; font-weight: 600;
         }
-        .copy-btn:hover { background: #059669; }
-        
-        .section-body {
-            padding: 15px;
-            min-height: 50px;
-        }
-        
-        /* Placeholder styling */
-        [contenteditable]:empty:before {
-            content: attr(placeholder);
-            color: #94a3b8;
-            cursor: text;
-        }
+        .copy-btn:hover { background: #0b5a0b; }
+        .section-content { padding: 20px; max-height: 500px; overflow-y: auto; }
+
+        /* Ensure images inside cards don't break the layout */
+        .section-content img { max-width: 100%; height: auto; border-radius: 4px; display: block; margin: 10px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📚 Section Splitter</h1>
-    <p class="instructions">Paste your formatted text below (images/bullets included). The app will split content wherever it finds "<strong>SECTION X:</strong>".</p>
+    <h1>📚 Study Material Splitter</h1>
+    <p>Paste content below. It will split by <strong>SECTION X:</strong> markers while keeping images and formatting.</p>
 
-    <div id="inputBox" class="editor-box" contenteditable="true" placeholder="Paste entire document here..."></div>
-    
-    <button class="btn" onclick="processContent()">Process & Split Sections</button>
+    <div id="inputBox" contenteditable="true"></div>
+    <button class="btn-main" onclick="processContent()">Split Sections</button>
 
-    <div id="resultsArea"></div>
+    <div id="output"></div>
 </div>
 
 <script>
     function processContent() {
         const input = document.getElementById('inputBox');
-        const resultsArea = document.getElementById('resultsArea');
-        resultsArea.innerHTML = ''; // Clear previous
+        const output = document.getElementById('output');
+        output.innerHTML = ''; 
 
-        // We use a temporary div to parse the HTML structure
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = input.innerHTML;
-
-        let sections = [];
-        let currentSectionTitle = "Intro / Header";
-        let currentContent = "";
-
-        // Iterate through top-level nodes of the pasted content
-        const children = Array.from(tempDiv.childNodes);
+        // Split HTML by "SECTION [number]" - using a regex that looks for 
+        // the text pattern but maintains the HTML tags around it.
+        const rawHTML = input.innerHTML;
         
-        children.forEach((node) => {
-            const textContent = node.textContent || "";
-            // Regex to detect "SECTION" followed by numbers and a colon
-            const sectionMatch = textContent.match(/SECTION\s+\d+[:\s-]/i);
+        // This regex looks for the word SECTION followed by digits and a colon or space
+        // It uses a delimiter strategy to split the string but keep the headers
+        const parts = rawHTML.split(/(?=SECTION\s+\d+[:\s])/i);
 
-            if (sectionMatch) {
-                // If we find a new section, save the previous one
-                if (currentContent.trim() !== "") {
-                    sections.push({ title: currentSectionTitle, html: currentContent });
-                }
-                // Update title to the new section heading
-                currentSectionTitle = textContent.trim().substring(0, 100); 
-                currentContent = node.outerHTML || node.textContent; // Start new section with this header
-            } else {
-                // Append current node's HTML to the active section
-                currentContent += node.outerHTML || node.nodeValue || "";
-            }
-        });
+        parts.forEach((content, index) => {
+            if (content.trim().length < 10) return; // Skip empty fragments
 
-        // Push the final section
-        if (currentContent.trim() !== "") {
-            sections.push({ title: currentSectionTitle, html: currentContent });
-        }
+            // Extract a title for the card header
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            const titleText = tempDiv.textContent.split('\n')[0].substring(0, 60) + "...";
 
-        // Display results
-        sections.forEach((sec, index) => {
-            createSectionCard(sec.title, sec.html, index);
+            createCard(titleText, content, index);
         });
     }
 
-    function createSectionCard(title, html, index) {
-        const resultsArea = document.getElementById('resultsArea');
-        
+    function createCard(title, html, index) {
+        const output = document.getElementById('output');
+        const cardId = `content-${index}`;
+
         const card = document.createElement('div');
         card.className = 'section-card';
-        
-        const header = document.createElement('div');
-        header.className = 'section-header';
-        header.innerHTML = `<span>${title}</span>`;
-        
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'copy-btn';
-        copyBtn.innerText = '📋 Copy for OneNote';
-        copyBtn.onclick = () => copyToClipboard(`section-body-${index}`);
-        
-        header.appendChild(copyBtn);
-        
-        const body = document.createElement('div');
-        body.className = 'section-body';
-        body.id = `section-body-${index}`;
-        body.contentEditable = "true";
-        body.innerHTML = html;
-        
-        card.appendChild(header);
-        card.appendChild(body);
-        resultsArea.appendChild(card);
+        card.innerHTML = `
+            <div class="section-header">
+                <span class="section-title">${title}</span>
+                <button class="copy-btn" onclick="copyToClipboard('${cardId}')">📋 Copy to OneNote</button>
+            </div>
+            <div id="${cardId}" class="section-content" contenteditable="true">
+                ${html}
+            </div>
+        `;
+        output.appendChild(card);
     }
 
-    async function copyToClipboard(elementId) {
+    function copyToClipboard(elementId) {
         const el = document.getElementById(elementId);
         
-        // This method is best for preserving Rich Text (HTML) for OneNote
+        // High-fidelity copy: selects the actual HTML nodes
+        // This is what allows OneNote to see it as "Rich Text" + Images
         const range = document.createRange();
-        range.selectNode(el);
+        range.selectNodeContents(el);
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
@@ -200,15 +117,11 @@
         try {
             document.execCommand('copy');
             const btn = el.parentElement.querySelector('.copy-btn');
-            const originalText = btn.innerText;
-            btn.innerText = '✅ Copied!';
-            btn.style.background = '#059669';
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = '#10b981';
-            }, 2000);
+            const oldText = btn.innerText;
+            btn.innerText = "✅ Ready to Paste!";
+            setTimeout(() => btn.innerText = oldText, 2000);
         } catch (err) {
-            alert('Selection failed, please copy manually.');
+            alert("Copy failed. Please select and copy manually.");
         }
         selection.removeAllRanges();
     }
