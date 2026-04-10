@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinical Content Splitter (Clean)</title>
+    <title>Compact Clinical Splitter</title>
     <style>
         :root {
-            --primary: #2b5797; /* OneNote Blue */
-            --success: #107c10; /* OneNote Green */
+            --primary: #2b5797; 
+            --success: #107c10; 
             --bg: #f3f2f1;
             --border: #d2d0ce;
         }
@@ -26,80 +26,94 @@
 
         header { text-align: center; margin-bottom: 20px; }
         header h1 { color: var(--primary); margin: 0; }
-        header p { color: #605e5c; font-size: 0.9em; }
 
-        /* Input Area */
         #inputBox {
             background: white;
             border: 2px solid var(--border);
             border-radius: 6px;
             padding: 20px;
-            min-height: 250px;
-            max-height: 400px;
+            min-height: 150px;
+            max-height: 300px;
             overflow-y: auto;
             outline: none;
             margin-bottom: 15px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
-        #inputBox:empty:before {
-            content: "Paste OpenEvidence / LLM content here...";
-            color: #a19f9d;
-        }
+        #inputBox:empty:before { content: "Paste content here..."; color: #a19f9d; }
 
         .controls { display: flex; gap: 10px; margin-bottom: 30px; }
         .btn {
             flex: 1; padding: 12px; border: none; border-radius: 4px;
-            font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.2s;
+            font-weight: 600; cursor: pointer; font-size: 16px;
         }
         .btn-split { background: var(--primary); color: white; }
-        .btn-split:hover { background: #124078; }
         .btn-clear { background: #edebe9; color: #323130; }
 
-        /* Output Cards */
         .section-card {
             background: white;
             border: 1px solid var(--border);
             border-radius: 8px;
-            margin-bottom: 25px;
-            overflow: hidden;
-            animation: fadeIn 0.3s ease-out;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } }
 
         .section-header {
             background: #faf9f8;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .section-header span { font-weight: bold; color: var(--primary); font-size: 0.9em; }
+        .section-header span { font-weight: bold; color: var(--primary); }
 
         .copy-btn {
             background: var(--success); color: white; border: none;
-            padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px;
+            padding: 6px 12px; border-radius: 4px; cursor: pointer;
         }
 
-        .section-content { padding: 25px; line-height: 1.6; }
-        .section-content img { max-width: 100%; height: auto; border-radius: 4px; display: block; margin: 10px 0; }
-        .section-content table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-        .section-content th, .section-content td { border: 1px solid #edebe9; padding: 8px; text-align: left; }
+        /* COMPACT SPACING LOGIC */
+        .section-content { 
+            padding: 15px 20px; 
+            line-height: 1.4; 
+            color: #323130;
+        }
+
+        /* Reset margins on all elements to prevent double-spacing in OneNote */
+        .section-content p, 
+        .section-content ul, 
+        .section-content ol, 
+        .section-content li,
+        .section-content h1,
+        .section-content h2,
+        .section-content h3 {
+            margin-top: 0 !important;
+            margin-bottom: 2px !important; /* Tiny gap for readability, prevents double-space */
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        .section-content ul, .section-content ol {
+            padding-left: 20px !important;
+        }
+
+        .section-content img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
+        
+        .section-content table { border-collapse: collapse; width: 100%; margin: 10px 0; border: 1px solid #edebe9; }
+        .section-content th, .section-content td { border: 1px solid #edebe9; padding: 4px 8px; text-align: left; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>Clinical Splitter & De-Citer</h1>
-        <p>Splits by "SECTION X:" and automatically removes [1], [2-5], etc.</p>
+        <h1>Clinical Splitter (Compact)</h1>
     </header>
 
     <div id="inputBox" contenteditable="true"></div>
 
     <div class="controls">
         <button class="btn btn-clear" onclick="clearAll()">Clear</button>
-        <button class="btn btn-split" onclick="processSections()">Clean & Split Content</button>
+        <button class="btn btn-split" onclick="processSections()">Clean & Split</button>
     </div>
 
     <div id="outputArea"></div>
@@ -111,29 +125,20 @@
         document.getElementById('outputArea').innerHTML = '';
     }
 
-    // This function walks through the HTML and removes citation patterns
+    function toTitleCase(str) {
+        return str.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+    }
+
     function stripCitations(node) {
         const citationRegex = /\[\d+(?:[\s,-]+\d+)*\]/g;
-        
         const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
         let textNode;
-        const nodesToProcess = [];
+        const nodes = [];
+        while (textNode = walker.nextNode()) nodes.push(textNode);
+        nodes.forEach(n => n.nodeValue = n.nodeValue.replace(citationRegex, ''));
         
-        // First, collect text nodes (modifying while walking is risky)
-        while (textNode = walker.nextNode()) {
-            nodesToProcess.push(textNode);
-        }
-
-        nodesToProcess.forEach(node => {
-            node.nodeValue = node.nodeValue.replace(citationRegex, '');
-        });
-
-        // Clean up empty superscript tags that might be left behind
-        const sups = node.querySelectorAll('sup');
-        sups.forEach(sup => {
-            if (sup.textContent.trim() === '') {
-                sup.remove();
-            }
+        node.querySelectorAll('sup').forEach(sup => {
+            if (sup.textContent.trim() === '') sup.remove();
         });
     }
 
@@ -142,29 +147,36 @@
         const outputArea = document.getElementById('outputArea');
         outputArea.innerHTML = '';
 
-        // Clone the input to work on it without destroying the original view
         const workingDiv = document.createElement('div');
         workingDiv.innerHTML = input.innerHTML;
 
-        // 1. Strip Citations first
         stripCitations(workingDiv);
 
         const children = Array.from(workingDiv.childNodes);
         let sections = [];
         let currentBucket = [];
-        let currentTitle = "Introduction";
+        let currentTitle = "General Information";
 
-        // 2. Group into sections
+        const sectionHeaderRegex = /SECTION\s+\d+[:\s-]*(.*)/i;
+
         children.forEach((node) => {
-            const text = node.textContent || "";
-            const isSectionHeader = /SECTION\s+\d+/i.test(text);
+            // Ignore "empty" text nodes that just contain whitespace/newlines
+            if (node.nodeType === 3 && !node.textContent.trim()) return;
 
-            if (isSectionHeader && (node.nodeType === 1)) {
+            const text = node.textContent || "";
+            const match = text.match(sectionHeaderRegex);
+
+            if (match && node.nodeType === 1) {
                 if (currentBucket.length > 0) {
                     sections.push({ title: currentTitle, nodes: [...currentBucket] });
                 }
-                currentTitle = text.trim().split('\n')[0].substring(0, 80);
-                currentBucket = [node]; 
+                
+                // Extract and Title Case the header
+                let rawTitle = match[1].trim();
+                currentTitle = toTitleCase(rawTitle);
+                
+                // Clear bucket (don't add the header node itself to the content)
+                currentBucket = []; 
             } else {
                 currentBucket.push(node);
             }
@@ -183,30 +195,20 @@
 
         const card = document.createElement('div');
         card.className = 'section-card';
-
-        const header = document.createElement('div');
-        header.className = 'section-header';
-        header.innerHTML = `<span>${section.title}</span>`;
-
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'copy-btn';
-        copyBtn.innerText = '📋 Copy for OneNote';
-        copyBtn.onclick = () => copyRichText(cardId);
+        card.innerHTML = `
+            <div class="section-header">
+                <span>${section.title}</span>
+                <button class="copy-btn" onclick="copyRichText('${cardId}')">📋 Copy for OneNote</button>
+            </div>
+            <div id="${cardId}" class="section-content" contenteditable="true"></div>
+        `;
         
-        header.appendChild(copyBtn);
-
-        const contentDiv = document.createElement('div');
-        contentDiv.id = cardId;
-        contentDiv.className = 'section-content';
-        contentDiv.contentEditable = "true";
+        output.appendChild(card);
+        const contentDiv = document.getElementById(cardId);
         
         section.nodes.forEach(node => {
             contentDiv.appendChild(node.cloneNode(true));
         });
-
-        card.appendChild(header);
-        card.appendChild(contentDiv);
-        output.appendChild(card);
     }
 
     function copyRichText(elementId) {
@@ -219,7 +221,7 @@
 
         try {
             document.execCommand('copy');
-            const btn = el.parentElement.querySelector('.copy-btn');
+            const btn = el.parentElement.previousElementSibling.querySelector('.copy-btn');
             btn.innerText = '✅ Copied!';
             setTimeout(() => btn.innerText = '📋 Copy for OneNote', 1500);
         } catch (err) {
