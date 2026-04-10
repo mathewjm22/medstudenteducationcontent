@@ -3,111 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Med-Student Section Splitter</title>
+    <title>Clinical Content Splitter (Clean)</title>
     <style>
-        :root { --primary: #0078d4; --bg: #f3f2f1; --card: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; line-height: 1.5; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        
-        /* Input Area */
-        #inputBox { 
-            background: white; border: 2px solid #deecf9; border-radius: 4px;
-            padding: 20px; min-height: 250px; margin-bottom: 20px;
-            overflow-y: auto; outline: none;
+        :root {
+            --primary: #2b5797; /* OneNote Blue */
+            --success: #107c10; /* OneNote Green */
+            --bg: #f3f2f1;
+            --border: #d2d0ce;
         }
-        #inputBox:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0,120,212,0.2); }
-        #inputBox:empty:before { content: "Paste your entire document here (images, bullets, and all)..."; color: #a19f9d; }
 
-        .btn-main { 
-            background: var(--primary); color: white; border: none; padding: 15px 30px; 
-            font-size: 18px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;
-            margin-bottom: 30px; transition: background 0.2s;
+        body {
+            font-family: "Segoe UI", -apple-system, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .btn-main:hover { background: #106ebe; }
+
+        .container { width: 100%; max-width: 1100px; }
+
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { color: var(--primary); margin: 0; }
+        header p { color: #605e5c; font-size: 0.9em; }
+
+        /* Input Area */
+        #inputBox {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            min-height: 250px;
+            max-height: 400px;
+            overflow-y: auto;
+            outline: none;
+            margin-bottom: 15px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        #inputBox:empty:before {
+            content: "Paste OpenEvidence / LLM content here...";
+            color: #a19f9d;
+        }
+
+        .controls { display: flex; gap: 10px; margin-bottom: 30px; }
+        .btn {
+            flex: 1; padding: 12px; border: none; border-radius: 4px;
+            font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.2s;
+        }
+        .btn-split { background: var(--primary); color: white; }
+        .btn-split:hover { background: #124078; }
+        .btn-clear { background: #edebe9; color: #323130; }
 
         /* Output Cards */
-        .section-card { 
-            background: var(--card); border-radius: 8px; margin-bottom: 25px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 5px solid var(--primary);
+        .section-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease-out;
         }
-        .section-header { 
-            padding: 12px 20px; background: #faf9f8; border-bottom: 1px solid #edebe9;
-            display: flex; justify-content: space-between; align-items: center;
-            border-top-right-radius: 8px;
-        }
-        .section-title { font-weight: bold; color: #323130; }
-        .copy-btn { 
-            background: #107c10; color: white; border: none; padding: 8px 15px; 
-            border-radius: 4px; cursor: pointer; font-weight: 600;
-        }
-        .copy-btn:hover { background: #0b5a0b; }
-        .section-content { padding: 20px; max-height: 500px; overflow-y: auto; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } }
 
-        /* Ensure images inside cards don't break the layout */
+        .section-header {
+            background: #faf9f8;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-header span { font-weight: bold; color: var(--primary); font-size: 0.9em; }
+
+        .copy-btn {
+            background: var(--success); color: white; border: none;
+            padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px;
+        }
+
+        .section-content { padding: 25px; line-height: 1.6; }
         .section-content img { max-width: 100%; height: auto; border-radius: 4px; display: block; margin: 10px 0; }
+        .section-content table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+        .section-content th, .section-content td { border: 1px solid #edebe9; padding: 8px; text-align: left; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📚 Study Material Splitter</h1>
-    <p>Paste content below. It will split by <strong>SECTION X:</strong> markers while keeping images and formatting.</p>
+    <header>
+        <h1>Clinical Splitter & De-Citer</h1>
+        <p>Splits by "SECTION X:" and automatically removes [1], [2-5], etc.</p>
+    </header>
 
     <div id="inputBox" contenteditable="true"></div>
-    <button class="btn-main" onclick="processContent()">Split Sections</button>
 
-    <div id="output"></div>
+    <div class="controls">
+        <button class="btn btn-clear" onclick="clearAll()">Clear</button>
+        <button class="btn btn-split" onclick="processSections()">Clean & Split Content</button>
+    </div>
+
+    <div id="outputArea"></div>
 </div>
 
 <script>
-    function processContent() {
-        const input = document.getElementById('inputBox');
-        const output = document.getElementById('output');
-        output.innerHTML = ''; 
+    function clearAll() {
+        document.getElementById('inputBox').innerHTML = '';
+        document.getElementById('outputArea').innerHTML = '';
+    }
 
-        // Split HTML by "SECTION [number]" - using a regex that looks for 
-        // the text pattern but maintains the HTML tags around it.
-        const rawHTML = input.innerHTML;
+    // This function walks through the HTML and removes citation patterns
+    function stripCitations(node) {
+        const citationRegex = /\[\d+(?:[\s,-]+\d+)*\]/g;
         
-        // This regex looks for the word SECTION followed by digits and a colon or space
-        // It uses a delimiter strategy to split the string but keep the headers
-        const parts = rawHTML.split(/(?=SECTION\s+\d+[:\s])/i);
+        const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
+        let textNode;
+        const nodesToProcess = [];
+        
+        // First, collect text nodes (modifying while walking is risky)
+        while (textNode = walker.nextNode()) {
+            nodesToProcess.push(textNode);
+        }
 
-        parts.forEach((content, index) => {
-            if (content.trim().length < 10) return; // Skip empty fragments
+        nodesToProcess.forEach(node => {
+            node.nodeValue = node.nodeValue.replace(citationRegex, '');
+        });
 
-            // Extract a title for the card header
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = content;
-            const titleText = tempDiv.textContent.split('\n')[0].substring(0, 60) + "...";
-
-            createCard(titleText, content, index);
+        // Clean up empty superscript tags that might be left behind
+        const sups = node.querySelectorAll('sup');
+        sups.forEach(sup => {
+            if (sup.textContent.trim() === '') {
+                sup.remove();
+            }
         });
     }
 
-    function createCard(title, html, index) {
-        const output = document.getElementById('output');
-        const cardId = `content-${index}`;
+    function processSections() {
+        const input = document.getElementById('inputBox');
+        const outputArea = document.getElementById('outputArea');
+        outputArea.innerHTML = '';
+
+        // Clone the input to work on it without destroying the original view
+        const workingDiv = document.createElement('div');
+        workingDiv.innerHTML = input.innerHTML;
+
+        // 1. Strip Citations first
+        stripCitations(workingDiv);
+
+        const children = Array.from(workingDiv.childNodes);
+        let sections = [];
+        let currentBucket = [];
+        let currentTitle = "Introduction";
+
+        // 2. Group into sections
+        children.forEach((node) => {
+            const text = node.textContent || "";
+            const isSectionHeader = /SECTION\s+\d+/i.test(text);
+
+            if (isSectionHeader && (node.nodeType === 1)) {
+                if (currentBucket.length > 0) {
+                    sections.push({ title: currentTitle, nodes: [...currentBucket] });
+                }
+                currentTitle = text.trim().split('\n')[0].substring(0, 80);
+                currentBucket = [node]; 
+            } else {
+                currentBucket.push(node);
+            }
+        });
+
+        if (currentBucket.length > 0) {
+            sections.push({ title: currentTitle, nodes: currentBucket });
+        }
+
+        sections.forEach((sec, idx) => renderCard(sec, idx));
+    }
+
+    function renderCard(section, index) {
+        const output = document.getElementById('outputArea');
+        const cardId = `section-${index}`;
 
         const card = document.createElement('div');
         card.className = 'section-card';
-        card.innerHTML = `
-            <div class="section-header">
-                <span class="section-title">${title}</span>
-                <button class="copy-btn" onclick="copyToClipboard('${cardId}')">📋 Copy to OneNote</button>
-            </div>
-            <div id="${cardId}" class="section-content" contenteditable="true">
-                ${html}
-            </div>
-        `;
+
+        const header = document.createElement('div');
+        header.className = 'section-header';
+        header.innerHTML = `<span>${section.title}</span>`;
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.innerText = '📋 Copy for OneNote';
+        copyBtn.onclick = () => copyRichText(cardId);
+        
+        header.appendChild(copyBtn);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.id = cardId;
+        contentDiv.className = 'section-content';
+        contentDiv.contentEditable = "true";
+        
+        section.nodes.forEach(node => {
+            contentDiv.appendChild(node.cloneNode(true));
+        });
+
+        card.appendChild(header);
+        card.appendChild(contentDiv);
         output.appendChild(card);
     }
 
-    function copyToClipboard(elementId) {
+    function copyRichText(elementId) {
         const el = document.getElementById(elementId);
-        
-        // High-fidelity copy: selects the actual HTML nodes
-        // This is what allows OneNote to see it as "Rich Text" + Images
         const range = document.createRange();
         range.selectNodeContents(el);
         const selection = window.getSelection();
@@ -117,11 +220,10 @@
         try {
             document.execCommand('copy');
             const btn = el.parentElement.querySelector('.copy-btn');
-            const oldText = btn.innerText;
-            btn.innerText = "✅ Ready to Paste!";
-            setTimeout(() => btn.innerText = oldText, 2000);
+            btn.innerText = '✅ Copied!';
+            setTimeout(() => btn.innerText = '📋 Copy for OneNote', 1500);
         } catch (err) {
-            alert("Copy failed. Please select and copy manually.");
+            console.error('Copy failed', err);
         }
         selection.removeAllRanges();
     }
